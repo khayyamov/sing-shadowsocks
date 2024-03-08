@@ -100,6 +100,30 @@ func (s *MultiService[U]) UpdateUsers(userList []U, keyList [][]byte) error {
 	return nil
 }
 
+func (s *MultiService[U]) AddUsers(userList []U, keyList [][]byte) error {
+	for i, user := range userList {
+		key := keyList[i]
+		if len(key) < s.keySaltLength {
+			return shadowsocks.ErrBadKey
+		} else if len(key) > s.keySaltLength {
+			key = Key(key, s.keySaltLength)
+		}
+
+		var hash [aes.BlockSize]byte
+		hash512 := blake3.Sum512(key)
+		copy(hash[:], hash512[:])
+
+		s.uPSKHash[hash] = user
+		s.uPSK[user] = key
+		var err error
+		s.uCipher[user], err = s.blockConstructor(key)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *MultiService[U]) UpdateUsersWithPasswords(userList []U, passwordList []string) error {
 	keyList := make([][]byte, 0, len(passwordList))
 	for _, password := range passwordList {
@@ -113,6 +137,21 @@ func (s *MultiService[U]) UpdateUsersWithPasswords(userList []U, passwordList []
 		keyList = append(keyList, uPSK)
 	}
 	return s.UpdateUsers(userList, keyList)
+}
+
+func (s *MultiService[U]) AddUsersWithPasswords(userList []U, passwordList []string) error {
+	keyList := make([][]byte, 0, len(passwordList))
+	for _, password := range passwordList {
+		if password == "" {
+			return shadowsocks.ErrMissingPassword
+		}
+		uPSK, err := base64.StdEncoding.DecodeString(password)
+		if err != nil {
+			return E.Cause(err, "decode psk")
+		}
+		keyList = append(keyList, uPSK)
+	}
+	return s.AddUsers(userList, keyList)
 }
 
 func (s *MultiService[U]) NewConnection(ctx context.Context, conn net.Conn, metadata M.Metadata) error {

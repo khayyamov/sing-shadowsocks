@@ -80,6 +80,31 @@ func (s *RelayService[U]) UpdateUsers(userList []U, keyList [][]byte, destinatio
 	return nil
 }
 
+func (s *RelayService[U]) AddUsers(userList []U, keyList [][]byte, destinationList []M.Socksaddr) error {
+	for i, user := range userList {
+		key := keyList[i]
+		destination := destinationList[i]
+		if len(key) < s.keySaltLength {
+			return shadowsocks.ErrBadKey
+		} else if len(key) > s.keySaltLength {
+			key = Key(key, s.keySaltLength)
+		}
+
+		var hash [aes.BlockSize]byte
+		hash512 := blake3.Sum512(key)
+		copy(hash[:], hash512[:])
+
+		s.uPSKHash[hash] = user
+		s.uDestination[user] = destination
+		var err error
+		s.uCipher[user], err = s.blockConstructor(key)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *RelayService[U]) UpdateUsersWithPasswords(userList []U, passwordList []string, destinationList []M.Socksaddr) error {
 	keyList := make([][]byte, 0, len(passwordList))
 	for _, password := range passwordList {
@@ -93,6 +118,21 @@ func (s *RelayService[U]) UpdateUsersWithPasswords(userList []U, passwordList []
 		keyList = append(keyList, uPSK)
 	}
 	return s.UpdateUsers(userList, keyList, destinationList)
+}
+
+func (s *RelayService[U]) AddUsersWithPasswords(userList []U, passwordList []string, destinationList []M.Socksaddr) error {
+	keyList := make([][]byte, 0, len(passwordList))
+	for _, password := range passwordList {
+		if password == "" {
+			return shadowsocks.ErrMissingPassword
+		}
+		uPSK, err := base64.StdEncoding.DecodeString(password)
+		if err != nil {
+			return E.Cause(err, "decode psk")
+		}
+		keyList = append(keyList, uPSK)
+	}
+	return s.AddUsers(userList, keyList, destinationList)
 }
 
 func NewRelayServiceWithPassword[U comparable](method string, password string, udpTimeout int64, handler shadowsocks.Handler) (*RelayService[U], error) {
