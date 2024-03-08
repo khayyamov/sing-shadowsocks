@@ -35,7 +35,9 @@ type Service interface {
 type MultiService[U comparable] interface {
 	Name() string
 	UpdateUsers(userList []U, keyList [][]byte) error
+	AddUsers(userList []U, keyList [][]byte) error
 	UpdateUsersWithPasswords(userList []U, passwordList []string) error
+	AddUsersWithPasswords(userList []U, passwordList []string) error
 	N.TCPConnectionHandler
 	N.UDPHandler
 	E.Handler
