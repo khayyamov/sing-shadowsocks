@@ -38,7 +38,8 @@ type MultiService[U comparable] interface {
 	UpdateUsersWithPasswords(userList []U, passwordList []string) error
 	AddUsers(userList []U, keyList [][]byte) error
 	AddUsersWithPasswords(userList []U, passwordList []string) error
-	DeleteUsersWithPasswords(passwordList []string) error
+	DeleteUsers(userList []U, keyList [][]byte) error
+	DeleteUsersWithPasswords(userList []U, passwordList []string) error
 	N.TCPConnectionHandler
 	N.UDPHandler
 	E.Handler

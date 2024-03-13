@@ -91,9 +91,25 @@ func (s *MultiService[U]) AddUsersWithPasswords(userList []U, passwordList []str
 	return nil
 }
 
-func (s *MultiService[U]) DeleteUsersWithPasswords(passwordList []string) error {
+func (s *MultiService[U]) DeleteUsersWithPasswords(_ []U, passwordList []string) error {
 	for _, password := range passwordList {
 		method, err := New(s.name, nil, password)
+		if err != nil {
+			return err
+		}
+		for user, existingMethod := range s.methodMap {
+			if reflect.DeepEqual(method, existingMethod) {
+				delete(s.methodMap, user)
+				break
+			}
+		}
+	}
+	return nil
+}
+
+func (s *MultiService[U]) DeleteUsers(_ []U, keyList [][]byte) error {
+	for _, key := range keyList {
+		method, err := New(s.name, key, "")
 		if err != nil {
 			return err
 		}
