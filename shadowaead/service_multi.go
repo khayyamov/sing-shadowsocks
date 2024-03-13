@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/netip"
+	"reflect"
 
 	"github.com/sagernet/sing-shadowsocks"
 	"github.com/sagernet/sing/common/auth"
@@ -66,9 +67,14 @@ func (s *MultiService[U]) UpdateUsersWithPasswords(userList []U, passwordList []
 	return nil
 }
 
-func (s *MultiService[U]) DeleteUsers(userList []U) error {
-	for _, user := range userList {
-		delete(s.methodMap, user)
+func (s *MultiService[U]) AddUsers(userList []U, keyList [][]byte) error {
+	for i, user := range userList {
+		key := keyList[i]
+		method, err := New(s.name, key, "")
+		if err != nil {
+			return err
+		}
+		s.methodMap[user] = method
 	}
 	return nil
 }
@@ -85,14 +91,34 @@ func (s *MultiService[U]) AddUsersWithPasswords(userList []U, passwordList []str
 	return nil
 }
 
-func (s *MultiService[U]) AddUsers(userList []U, keyList [][]byte) error {
-	for i, user := range userList {
-		key := keyList[i]
+func (s *MultiService[U]) DeleteUsersWithPasswords(passwordList []string) error {
+	for _, password := range passwordList {
+		method, err := New(s.name, nil, password)
+		if err != nil {
+			return err
+		}
+		for user, existingMethod := range s.methodMap {
+			if reflect.DeepEqual(method, existingMethod) {
+				delete(s.methodMap, user)
+				break
+			}
+		}
+	}
+	return nil
+}
+
+func (s *MultiService[U]) DeleteUsers(keyList [][]byte) error {
+	for _, key := range keyList {
 		method, err := New(s.name, key, "")
 		if err != nil {
 			return err
 		}
-		s.methodMap[user] = method
+		for user, existingMethod := range s.methodMap {
+			if reflect.DeepEqual(method, existingMethod) {
+				delete(s.methodMap, user)
+				break
+			}
+		}
 	}
 	return nil
 }

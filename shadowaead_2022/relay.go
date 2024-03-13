@@ -80,7 +80,7 @@ func (s *RelayService[U]) UpdateUsers(userList []U, keyList [][]byte, destinatio
 	return nil
 }
 
-func (s *RelayService[U]) DeleteUsers(userList []U, keyList [][]byte, destinationList []M.Socksaddr) error {
+func (s *RelayService[U]) DeleteUsers(userList []U, keyList [][]byte) error {
 	for i, user := range userList {
 		key := keyList[i]
 		if len(key) < s.keySaltLength {
@@ -107,7 +107,7 @@ func (s *RelayService[U]) DeleteUsers(userList []U, keyList [][]byte, destinatio
 	return nil
 }
 
-func (s *RelayService[U]) DeleteUsersWithPasswords(userList []U, passwordList []string, destinationList []M.Socksaddr) error {
+func (s *RelayService[U]) DeleteUsersWithPasswords(userList []U, passwordList []string) error {
 	keyList := make([][]byte, 0, len(passwordList))
 	for _, password := range passwordList {
 		if password == "" {
@@ -119,7 +119,7 @@ func (s *RelayService[U]) DeleteUsersWithPasswords(userList []U, passwordList []
 		}
 		keyList = append(keyList, uPSK)
 	}
-	return s.DeleteUsers(userList, keyList, destinationList)
+	return s.DeleteUsers(userList, keyList)
 }
 
 func (s *RelayService[U]) AddUsers(userList []U, keyList [][]byte, destinationList []M.Socksaddr) error {
