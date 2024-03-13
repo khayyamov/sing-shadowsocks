@@ -107,22 +107,6 @@ func (s *MultiService[U]) DeleteUsersWithPasswords(passwordList []string) error 
 	return nil
 }
 
-func (s *MultiService[U]) DeleteUsers(keyList [][]byte) error {
-	for _, key := range keyList {
-		method, err := New(s.name, key, "")
-		if err != nil {
-			return err
-		}
-		for user, existingMethod := range s.methodMap {
-			if reflect.DeepEqual(method, existingMethod) {
-				delete(s.methodMap, user)
-				break
-			}
-		}
-	}
-	return nil
-}
-
 func (s *MultiService[U]) NewConnection(ctx context.Context, conn net.Conn, metadata M.Metadata) error {
 	err := s.newConnection(ctx, conn, metadata)
 	if err != nil {
