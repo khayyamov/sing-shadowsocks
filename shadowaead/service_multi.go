@@ -1,13 +1,9 @@
 package shadowaead
 
 import (
+	"bytes"
 	"context"
 	"crypto/cipher"
-	"io"
-	"net"
-	"net/netip"
-	"reflect"
-
 	"github.com/sagernet/sing-shadowsocks"
 	"github.com/sagernet/sing/common/auth"
 	"github.com/sagernet/sing/common/buf"
@@ -17,6 +13,9 @@ import (
 	N "github.com/sagernet/sing/common/network"
 	"github.com/sagernet/sing/common/rw"
 	"github.com/sagernet/sing/common/udpnat"
+	"io"
+	"net"
+	"net/netip"
 )
 
 var _ shadowsocks.MultiService[int] = (*MultiService[int])(nil)
@@ -98,7 +97,7 @@ func (s *MultiService[U]) DeleteUsersWithPasswords(_ []U, passwordList []string)
 			return err
 		}
 		for user, existingMethod := range s.methodMap {
-			if reflect.DeepEqual(method, existingMethod) {
+			if bytes.Equal(method.key, existingMethod.key) {
 				delete(s.methodMap, user)
 				break
 			}
@@ -114,7 +113,7 @@ func (s *MultiService[U]) DeleteUsers(_ []U, keyList [][]byte) error {
 			return err
 		}
 		for user, existingMethod := range s.methodMap {
-			if reflect.DeepEqual(method, existingMethod) {
+			if bytes.Equal(method.key, existingMethod.key) {
 				delete(s.methodMap, user)
 				break
 			}
