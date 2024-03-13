@@ -53,18 +53,6 @@ func (s *MultiService[U]) UpdateUsers(userList []U, keyList [][]byte) error {
 	return nil
 }
 
-func (s *MultiService[U]) AddUsers(userList []U, keyList [][]byte) error {
-	for i, user := range userList {
-		key := keyList[i]
-		method, err := New(s.name, key, "")
-		if err != nil {
-			return err
-		}
-		s.methodMap[user] = method
-	}
-	return nil
-}
-
 func (s *MultiService[U]) UpdateUsersWithPasswords(userList []U, passwordList []string) error {
 	s.methodMap = make(map[U]*Method)
 	for i, user := range userList {
@@ -78,10 +66,29 @@ func (s *MultiService[U]) UpdateUsersWithPasswords(userList []U, passwordList []
 	return nil
 }
 
+func (s *MultiService[U]) DeleteUsers(userList []U) error {
+	for _, user := range userList {
+		delete(s.methodMap, user)
+	}
+	return nil
+}
+
 func (s *MultiService[U]) AddUsersWithPasswords(userList []U, passwordList []string) error {
 	for i, user := range userList {
 		password := passwordList[i]
 		method, err := New(s.name, nil, password)
+		if err != nil {
+			return err
+		}
+		s.methodMap[user] = method
+	}
+	return nil
+}
+
+func (s *MultiService[U]) AddUsers(userList []U, keyList [][]byte) error {
+	for i, user := range userList {
+		key := keyList[i]
+		method, err := New(s.name, key, "")
 		if err != nil {
 			return err
 		}
